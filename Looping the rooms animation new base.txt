@@ -45,6 +45,22 @@ end
 
 setGhost(true)
 
+-- === CANCEL TOKEN HOOK ===
+-- The emote wheel passes a token via the environment.
+-- If _cancelToken is set and becomes cancelled, we clean up and abort.
+local _token = rawget(getfenv(0), "_cancelToken") -- nil if not run from wheel
+
+local function doCleanup()
+    pcall(function() conn:Disconnect() end)
+    pcall(function() track:Stop() end)
+    pcall(function() hrp.Anchored = false end)
+    pcall(function() setGhost(false) end)
+    pcall(function() hum.PlatformStand = false end)
+    pcall(function() hum.Sit = oldSit end)
+    pcall(function() hum.AutoRotate = oldAutoRotate end)
+    pcall(function() if checkpoint and checkpoint.Parent then checkpoint:Destroy() end end)
+end
+
 -- animation (optional placeholder)
 local animation = Instance.new("Animation")
 animation.AnimationId = "rbxassetid://0"
@@ -1017,6 +1033,12 @@ local finished = false
 local conn
 
 conn = RunService.RenderStepped:Connect(function()
+	-- NEW: abort if wheel cancelled this emote
+	if _token and _token.cancelled then
+		finished = true
+		doCleanup()
+		return
+	end
 	if finished then return end
 
 	local currentTime = tick()
