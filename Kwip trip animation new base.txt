@@ -61,6 +61,22 @@ checkpoint.CanCollide = false
 checkpoint.Transparency = 1
 checkpoint.Parent = workspace
 
+-- === CANCEL TOKEN HOOK ===
+-- The emote wheel passes a token via the environment.
+-- If _cancelToken is set and becomes cancelled, we clean up and abort.
+local _token = rawget(getfenv(0), "_cancelToken") -- nil if not run from wheel
+
+local function doCleanup()
+    pcall(function() conn:Disconnect() end)
+    pcall(function() track:Stop() end)
+    pcall(function() hrp.Anchored = false end)
+    pcall(function() setGhost(false) end)
+    pcall(function() hum.PlatformStand = false end)
+    pcall(function() hum.Sit = oldSit end)
+    pcall(function() hum.AutoRotate = oldAutoRotate end)
+    pcall(function() if checkpoint and checkpoint.Parent then checkpoint:Destroy() end end)
+end
+
 local frames = {
 	CFrame.new(-194.025696,27.274647,81.760391,0.084758,-0.000000,0.996402,0.000000,1.000000,0.000000,-0.996402,0.000000,0.084758),
 	CFrame.new(-194.013260,27.246962,82.035614,0.188647,0.062779,0.980036,0.056484,0.995609,-0.074650,-0.980419,0.069439,0.184273),
@@ -609,7 +625,13 @@ local finished = false
 local conn
 
 conn = RunService.RenderStepped:Connect(function()
-	if finished then return end
+    -- NEW: abort if wheel cancelled this emote
+    if _token and _token.cancelled then
+        finished = true
+        doCleanup()
+        return
+    end
+    if finished then return end
 
 	local currentTime = tick()
 	local elapsedTime = currentTime - startTime
