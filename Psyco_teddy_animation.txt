@@ -50,9 +50,14 @@ setGhost(true)
 -- If _cancelToken is set and becomes cancelled, we clean up and abort.
 local _token = rawget(getfenv(0), "_cancelToken") -- nil if not run from wheel
 
+-- Declare as upvalues FIRST so doCleanup can always close over them
+local conn
+local track
+local checkpoint
+
 local function doCleanup()
-    pcall(function() conn:Disconnect() end)
-    pcall(function() track:Stop() end)
+    pcall(function() if conn then conn:Disconnect() end end)
+    pcall(function() if track then track:Stop(0) end end)
     pcall(function() hrp.Anchored = false end)
     pcall(function() setGhost(false) end)
     pcall(function() hum.PlatformStand = false end)
@@ -64,12 +69,12 @@ end
 -- animation (optional placeholder)
 local animation = Instance.new("Animation")
 animation.AnimationId = "rbxassetid://0"
-local track = hum:LoadAnimation(animation)
+track = hum:LoadAnimation(animation)
 track:Play(1, 5, 1)
 track:AdjustSpeed(0.01)
 
 -- checkpoint target
-local checkpoint = Instance.new("Part")
+checkpoint = Instance.new("Part")
 checkpoint.Size = hrp.Size
 checkpoint.CFrame = hrp.CFrame
 checkpoint.Anchored = true
@@ -650,7 +655,7 @@ end
 -- RUNTIME LOOP
 local startTime = tick()
 local finished = false
-local conn
+-- (conn is declared above as an upvalue so doCleanup can always reach it)
 
 conn = RunService.RenderStepped:Connect(function()
 	-- NEW: abort if wheel cancelled this emote
