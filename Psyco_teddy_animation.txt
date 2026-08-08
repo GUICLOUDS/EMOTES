@@ -710,6 +710,7 @@ local SPEED_MULTIPLIER = 1
 
 local function playPose(animId, fadeTime, timePos, speed, stopDelay, waitTime)
 	if finished then return end
+	if _token and _token.cancelled then return end
 	local anim = Instance.new("Animation")
 	anim.AnimationId = "http://www.roblox.com/asset/?version=1&id=" .. animId
 	local pt = hum:LoadAnimation(anim)
@@ -724,7 +725,15 @@ local function playPose(animId, fadeTime, timePos, speed, stopDelay, waitTime)
 	end)
 
 	if waitTime then
-		task.wait(waitTime / SPEED_MULTIPLIER)
+		-- poll so we exit immediately if cancelled mid-wait
+		local elapsed = 0
+		local target = waitTime / SPEED_MULTIPLIER
+		local stepSize = 0.03
+		while elapsed < target do
+			if finished or (_token and _token.cancelled) then return end
+			local dt = task.wait(math.min(stepSize, target - elapsed))
+			elapsed = elapsed + dt
+		end
 	end
 end
 
