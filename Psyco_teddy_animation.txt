@@ -50,20 +50,9 @@ setGhost(true)
 -- If _cancelToken is set and becomes cancelled, we clean up and abort.
 local _token = rawget(getfenv(0), "_cancelToken") -- nil if not run from wheel
 
--- Declare as upvalues FIRST so doCleanup can always close over them
-local conn
-local track
-local checkpoint
-local finished = false  -- shared flag so the loop stops immediately on cleanup
-local poseTracks = {}   -- all playPose tracks so we can kill them on cancel
-
 local function doCleanup()
-    finished = true
-    pcall(function() if conn then conn:Disconnect() end end)
-    pcall(function() if track then track:Stop(0) end end)
-    for _, pt in ipairs(poseTracks) do
-        pcall(function() pt:Stop(0) end)
-    end
+    pcall(function() conn:Disconnect() end)
+    pcall(function() track:Stop() end)
     pcall(function() hrp.Anchored = false end)
     pcall(function() setGhost(false) end)
     pcall(function() hum.PlatformStand = false end)
@@ -75,12 +64,12 @@ end
 -- animation (optional placeholder)
 local animation = Instance.new("Animation")
 animation.AnimationId = "rbxassetid://0"
-track = hum:LoadAnimation(animation)
+local track = hum:LoadAnimation(animation)
 track:Play(1, 5, 1)
 track:AdjustSpeed(0.01)
 
 -- checkpoint target
-checkpoint = Instance.new("Part")
+local checkpoint = Instance.new("Part")
 checkpoint.Size = hrp.Size
 checkpoint.CFrame = hrp.CFrame
 checkpoint.Anchored = true
@@ -660,16 +649,17 @@ end
 
 -- RUNTIME LOOP
 local startTime = tick()
--- (finished and conn declared above as upvalues so doCleanup can reach them)
+local finished = false
+local conn
 
 conn = RunService.RenderStepped:Connect(function()
-	if finished then return end
-
-	-- abort if wheel cancelled this emote
+	-- NEW: abort if wheel cancelled this emote
 	if _token and _token.cancelled then
+		finished = true
 		doCleanup()
 		return
 	end
+	if finished then return end
 
 	local currentTime = tick()
 	local elapsedTime = currentTime - startTime
@@ -678,19 +668,29 @@ conn = RunService.RenderStepped:Connect(function()
 	if isFinished or index >= totalFrames then
 		finished = true
 		conn:Disconnect()
-		track:Stop(0)
 
-		-- snap back to start position (no anchor risk)
+		track:Stop()
+
+		-- stabilize before final tween
+		hrp.Anchored = true
 		hrp.AssemblyLinearVelocity = Vector3.zero
 		hrp.AssemblyAngularVelocity = Vector3.zero
-		hrp.CFrame = checkpoint.CFrame
 
-		if checkpoint and checkpoint.Parent then
-			checkpoint:Destroy()
-		end
+		local tween = TweenService:Create(
+			hrp,
+			TweenInfo.new(0, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), -- Instant transition (0s)
+			{CFrame = checkpoint.CFrame}
+		)
+
+		tween:Play()
+		tween.Completed:Wait()
+
+		checkpoint:Destroy()
 
 		-- restore state
+		hrp.Anchored = false
 		setGhost(false)
+
 		hum.PlatformStand = false
 		hum.Sit = oldSit
 		hum.AutoRotate = oldAutoRotate
@@ -706,35 +706,28 @@ conn = RunService.RenderStepped:Connect(function()
 	hrp.AssemblyLinearVelocity = Vector3.zero
 	hrp.AssemblyAngularVelocity = Vector3.zero
 end)
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+
 local SPEED_MULTIPLIER = 1
 
 local function playPose(animId, fadeTime, timePos, speed, stopDelay, waitTime)
-	if finished then return end
-	if _token and _token.cancelled then return end
-	local anim = Instance.new("Animation")
-	anim.AnimationId = "http://www.roblox.com/asset/?version=1&id=" .. animId
-	local pt = hum:LoadAnimation(anim)
-	table.insert(poseTracks, pt)
-	pt:Play(fadeTime)
-	pt.TimePosition = timePos
-	pt:AdjustSpeed(speed * SPEED_MULTIPLIER)
+local animation = Instance.new("Animation")
+animation.AnimationId = "http://www.roblox.com/asset/?version=1&id=" .. animId
+local track = humanoid:LoadAnimation(animation)
+track:Play(fadeTime)
+track.TimePosition = timePos
+track:AdjustSpeed(speed * SPEED_MULTIPLIER)
 
-	local scaledStopDelay = stopDelay / SPEED_MULTIPLIER
-	task.delay(scaledStopDelay, function()
-		pcall(function() pt:Stop(fadeTime) end)
-	end)
+local scaledStopDelay = stopDelay / SPEED_MULTIPLIER
+task.delay(scaledStopDelay, function()
+track:Stop(fadeTime)
+end)
 
-	if waitTime then
-		-- poll so we exit immediately if cancelled mid-wait
-		local elapsed = 0
-		local target = waitTime / SPEED_MULTIPLIER
-		local stepSize = 0.03
-		while elapsed < target do
-			if finished or (_token and _token.cancelled) then return end
-			local dt = task.wait(math.min(stepSize, target - elapsed))
-			elapsed = elapsed + dt
-		end
-	end
+if waitTime then
+wait(waitTime / SPEED_MULTIPLIER)
+end
 end
 
 playPose(21632926, 0, 0, 1, 9, nil)
