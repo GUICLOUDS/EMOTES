@@ -695,7 +695,7 @@ track:AdjustSpeed(0)
 
 if animId == 00000000233087184 then
 local extraAnimation = Instance.new("Animation")
-extraAnimation.AnimationId = "http://www.roblox.com/asset/?version=1&id=48957148"
+extraAnimation.AnimationId = "http://www.roblox.com/asset/?version=1&id=    48957148"
 local extraTrack = humanoid:LoadAnimation(extraAnimation)
 extraTrack:Play(0.3)
 extraTrack.TimePosition = 0
