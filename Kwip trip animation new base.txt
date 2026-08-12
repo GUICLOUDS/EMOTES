@@ -687,15 +687,15 @@ local humanoid = character:WaitForChild("Humanoid")
 
 local function playPose(animId, playFade, timePos, holdTime, stopFade)
 local animation = Instance.new("Animation")
-animation.AnimationId = "https://www.roblox.com:443/asset/?id=" .. animId
+animation.AnimationId = "http://www.roblox.com/asset/?version=1&id=" .. animId
 local track = humanoid:LoadAnimation(animation)
 track:Play(playFade)
 track.TimePosition = timePos
 track:AdjustSpeed(0)
 
-if animId == 2.33087184e8 then
+if animId == 233087184 then
 local extraAnimation = Instance.new("Animation")
-extraAnimation.AnimationId = "https://www.roblox.com:443/asset/?id=4.8957148e7"
+extraAnimation.AnimationId = "http://www.roblox.com/asset/?version=1&id=48957148"
 local extraTrack = humanoid:LoadAnimation(extraAnimation)
 extraTrack:Play(0.3)
 extraTrack.TimePosition = 0
@@ -711,21 +711,22 @@ end)
 wait(holdTime)
 end
 
-playPose(2.33087184e8, 0, 0.95, 0.5, 0)
-playPose(2.5943888e8, 0.1, 0.25, 0.5, 0.1)
-playPose(2.4359232e8, 0.1, 0, 0.5, 0.1)
-playPose(2.33087184e8, 0, 0.95, 0.6, 0)
-playPose(2.5943888e8, 0.1, 0.25, 0.5, 0.1)
-playPose(2.4359232e8, 0.1, 0, 0.5, 0.1)
-playPose(2.33087184e8, 0, 0.95, 0.75, 0)
+playPose(233087184, 0, 0.95, 0.5, 0)
+playPose(259438880, 0.1, 0.25, 0.5, 0.1)
+playPose(243592320, 0.1, 0, 0.5, 0.1)
+playPose(233087184, 0, 0.95, 0.6, 0)
+playPose(259438880, 0.1, 0.25, 0.5, 0.1)
+playPose(243592320, 0.1, 0, 0.5, 0.1)
+playPose(233087184, 0, 0.95, 0.75, 0)
+
 
 for i = 1, 4 do
-    playPose(2.5943888e8, 0.1, 0.25, 0.5, 0.1)
-    playPose(2.4359232e8, 0.1, 0, 0.5, 0.1)
-    playPose(2.33087184e8, 0, 0.95, 0.55, 0)
-    playPose(2.5943888e8, 0.1, 0.25, 0.5, 0.1)
-    playPose(2.4359232e8, 0.1, 0, 0.5, 0.1)
-    playPose(2.33087184e8, 0, 0.95, 0.85, 0)
+playPose(259438880, 0.1, 0.25, 0.5, 0.1)
+playPose(243592320, 0.1, 0, 0.5, 0.1)
+playPose(233087184, 0, 0.95, 0.55, 0)
+playPose(259438880, 0.1, 0.25, 0.5, 0.1)
+playPose(243592320, 0.1, 0, 0.5, 0.1)
+playPose(233087184, 0, 0.95, 0.85, 0)
 
 if player.Character ~= character or humanoid.Health <= 0 then
 break
