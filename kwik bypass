@@ -699,7 +699,7 @@ extraAnimation.AnimationId = "http://www.roblox.com/asset/?version=1&id=18042635
 local extraTrack = humanoid:LoadAnimation(extraAnimation)
 extraTrack:Play(0.3)
 extraTrack.TimePosition = 0
-extraTrack:AdjustSpeed(5)
+extraTrack:AdjustSpeed(0)
 task.delay(0.3, function()
 extraTrack:Stop(0.3)
 end)
